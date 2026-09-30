@@ -45,4 +45,14 @@ interface PaymentRepositoryInterface
      * Get payments for an invoice.
      */
     public function getByInvoiceId(string $invoiceId): Collection;
+
+    /**
+     * Count pending WhatsApp/manual payments waiting for admin verification.
+     */
+    public function getPendingWaPaymentsCount(): int;
+
+    /**
+     * Find payment by proof sha256 hash.
+     */
+    public function findByProofSha256(string $sha256): ?Payment;
 }

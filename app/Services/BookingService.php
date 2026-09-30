@@ -138,6 +138,25 @@ class BookingService
                 'status' => 'aktif',
             ]);
 
+            // Sinkronisasi dokumen KTP dari booking ke tenant_documents
+            if (!empty($booking->ktp_file)) {
+                $hasKtp = \App\Models\TenantDocument::where('user_id', $user->id)
+                    ->where('document_type', 'ktp')
+                    ->exists();
+
+                if (!$hasKtp) {
+                    \App\Models\TenantDocument::create([
+                        'user_id' => $user->id,
+                        'document_type' => 'ktp',
+                        'file_path' => $booking->ktp_file,
+                        'original_filename' => 'KTP-' . $user->name . '.jpg',
+                        'mime_type' => 'image/jpeg',
+                        'is_verified' => true,
+                        'verified_at' => now(),
+                    ]);
+                }
+            }
+
             // Kunci kamar jadi terisi
             $room->update(['status' => 'terisi']);
 

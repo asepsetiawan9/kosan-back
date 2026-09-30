@@ -21,7 +21,7 @@ class RoomController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        $filters = $request->only(['status', 'type', 'search']);
+        $filters = $request->only(['property_id', 'status', 'type', 'search']);
         $rooms = $this->roomService->getPaginatedRooms($filters, (int) $request->get('per_page', 15));
 
         return RoomResource::collection($rooms);
@@ -35,7 +35,7 @@ class RoomController extends Controller
 
     public function store(StoreRoomRequest $request): JsonResponse
     {
-        $data = $request->safe()->only(['room_number', 'name', 'type', 'base_price', 'description']);
+        $data = $request->safe()->only(['property_id', 'room_number', 'name', 'type', 'base_price', 'description']);
         $facilityIds = $request->validated('facility_ids', []);
         $images = $request->validated('images', []);
 
@@ -58,7 +58,7 @@ class RoomController extends Controller
 
     public function update(UpdateRoomRequest $request, string $id): JsonResponse
     {
-        $data = $request->safe()->only(['room_number', 'name', 'type', 'base_price', 'description', 'status']);
+        $data = $request->safe()->only(['property_id', 'room_number', 'name', 'type', 'base_price', 'description', 'status']);
         $facilityIds = $request->has('facility_ids') ? $request->validated('facility_ids') : null;
 
         $room = $this->roomService->updateRoom($id, $data, $facilityIds);

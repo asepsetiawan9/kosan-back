@@ -18,9 +18,17 @@ class Payment extends Model
         'invoice_id',
         'amount',
         'method',
+        'source',
         'gateway_provider',
         'gateway_transaction_id',
         'proof_file',
+        'proof_mime',
+        'proof_size',
+        'proof_sha256',
+        'wa_message_id',
+        'claimed_amount',
+        'is_duplicate_suspect',
+        'reject_reason',
         'status',
         'verified_at',
         'verified_by',
@@ -31,6 +39,9 @@ class Payment extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'claimed_amount' => 'decimal:2',
+            'is_duplicate_suspect' => 'boolean',
+            'proof_size' => 'integer',
             'verified_at' => 'datetime',
         ];
     }
@@ -43,6 +54,11 @@ class Payment extends Model
     public function verifier(): BelongsTo
     {
         return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    public function waMessage(): BelongsTo
+    {
+        return $this->belongsTo(WaMessage::class, 'wa_message_id');
     }
 
     public function isSuccess(): bool
@@ -58,5 +74,10 @@ class Payment extends Model
     public function isFailed(): bool
     {
         return $this->status === 'failed';
+    }
+
+    public function isFromWhatsApp(): bool
+    {
+        return $this->source === 'whatsapp';
     }
 }

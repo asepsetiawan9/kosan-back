@@ -25,6 +25,10 @@ class User extends Authenticatable
         'name',
         'email',
         'phone',
+        'nik',
+        'wa_number',
+        'wa_opt_in',
+        'wa_opt_in_at',
         'password',
         'role',
         'must_change_password',
@@ -51,6 +55,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'must_change_password' => 'boolean',
+            'wa_opt_in' => 'boolean',
+            'wa_opt_in_at' => 'datetime',
         ];
     }
 
@@ -68,4 +74,25 @@ class User extends Authenticatable
     {
         return $this->hasMany(Tenancy::class);
     }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(TenantDocument::class);
+    }
+
+    public function waMessages(): HasMany
+    {
+        return $this->hasMany(WaMessage::class, 'tenant_id');
+    }
+
+    public function waConversations(): HasMany
+    {
+        return $this->hasMany(WaConversation::class, 'tenant_id');
+    }
+
+    public function getDocumentByType(string $type): ?TenantDocument
+    {
+        return $this->documents()->where('document_type', $type)->latest()->first();
+    }
 }
+

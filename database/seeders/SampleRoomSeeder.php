@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\Facility;
+use App\Models\Property;
 use App\Models\Room;
 use App\Models\RoomImage;
 use Illuminate\Database\Seeder;
@@ -14,9 +15,12 @@ class SampleRoomSeeder extends Seeder
     public function run(): void
     {
         $allFacilities = Facility::all();
+        $propBandung = Property::where('name', 'Kos Melati Residence')->first();
+        $propJogja = Property::where('name', 'Graha Harmoni Paviliun')->first();
 
         $rooms = [
             [
+                'property_id' => $propBandung?->id,
                 'room_number' => '101',
                 'name' => 'Kamar Standar Asri 101',
                 'type' => 'standar',
@@ -30,6 +34,7 @@ class SampleRoomSeeder extends Seeder
                 'facility_categories' => ['umum', 'kamar'],
             ],
             [
+                'property_id' => $propBandung?->id,
                 'room_number' => '102',
                 'name' => 'Kamar Deluxe Modern 102',
                 'type' => 'deluxe',
@@ -43,6 +48,7 @@ class SampleRoomSeeder extends Seeder
                 'facility_categories' => ['umum', 'kamar', 'kamar_mandi'],
             ],
             [
+                'property_id' => $propJogja?->id,
                 'room_number' => '201',
                 'name' => 'Kamar VIP Eksekutif 201',
                 'type' => 'vip',
@@ -56,6 +62,7 @@ class SampleRoomSeeder extends Seeder
                 'facility_categories' => ['umum', 'kamar', 'kamar_mandi'],
             ],
             [
+                'property_id' => $propJogja?->id,
                 'room_number' => '202',
                 'name' => 'Kamar Paviliun Suite 202',
                 'type' => 'paviliun',

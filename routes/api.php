@@ -2,22 +2,33 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\Admin\AdminTenantDocumentController;
 use App\Http\Controllers\Api\Admin\BookingApprovalController;
 use App\Http\Controllers\Api\Admin\ComplaintController as AdminComplaintController;
 use App\Http\Controllers\Api\Admin\ContractController;
 use App\Http\Controllers\Api\Admin\FacilityController;
 use App\Http\Controllers\Api\Admin\InvoiceController;
 use App\Http\Controllers\Api\Admin\PaymentController as AdminPaymentController;
+use App\Http\Controllers\Api\Admin\PropertyController;
+use App\Http\Controllers\Api\Admin\PropertyMediaController;
 use App\Http\Controllers\Api\Admin\ReportController;
 use App\Http\Controllers\Api\Admin\RoomController;
 use App\Http\Controllers\Api\Admin\TenancyController;
+use App\Http\Controllers\Api\Admin\WaAdminController;
+use App\Http\Controllers\Api\Admin\WaPaymentVerificationController;
+use App\Http\Controllers\Api\Admin\WaReminderRuleController;
+use App\Http\Controllers\Api\Admin\WaTemplateController;
 use App\Http\Controllers\Api\AuthController;
+
 use App\Http\Controllers\Api\PaymentWebhookController;
+use App\Http\Controllers\Api\WhatsAppWebhookController;
 use App\Http\Controllers\Api\Public\PublicBookingController;
+use App\Http\Controllers\Api\Public\PublicPropertyController;
 use App\Http\Controllers\Api\Public\PublicRoomController;
 use App\Http\Controllers\Api\Tenant\TenantAuthController;
 use App\Http\Controllers\Api\Tenant\TenantComplaintController;
 use App\Http\Controllers\Api\Tenant\TenantContractController;
+use App\Http\Controllers\Api\Tenant\TenantDocumentController;
 use App\Http\Controllers\Api\Tenant\TenantInvoiceController;
 use App\Http\Controllers\Api\Tenant\TenantPaymentController;
 use App\Http\Controllers\Api\Tenant\TenantProfileController;
@@ -39,11 +50,22 @@ Route::post('/tenant/login', [TenantAuthController::class, 'login']);
 Route::prefix('public')->group(function () {
     Route::get('/rooms', [PublicRoomController::class, 'index']);
     Route::get('/rooms/{id}', [PublicRoomController::class, 'show']);
+    Route::get('/properties', [PublicPropertyController::class, 'index']);
+    Route::get('/properties/{id}', [PublicPropertyController::class, 'show']);
     Route::post('/bookings', [PublicBookingController::class, 'store'])->middleware('throttle:5,1');
 });
 
 // Payment Gateway Webhook (Signature verified & Idempotent)
 Route::post('/webhook/payment/{provider}', [PaymentWebhookController::class, 'handle']);
+
+// WhatsApp Gateway Webhook (Fonnte / Fake / CloudAPI, Signature/Secret verified & Idempotent)
+Route::post('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'handle'])->middleware('throttle:60,1');
+
+// Health Check Endpoint (Monitoring & Diagnostics)
+Route::get('/health/wa', function (\App\Services\WaHealthCheckService $healthService) {
+    $health = $healthService->checkHealth();
+    return response()->json($health, $health['status'] === 'unhealthy' ? 503 : 200);
+});
 
 // Temporary Signed URL for Protected KTP Access (5 min expiry)
 Route::get('/admin/bookings/{id}/ktp', [BookingApprovalController::class, 'streamKtp'])
@@ -62,6 +84,15 @@ Route::get('/admin/contracts/{id}/stream', [ContractController::class, 'stream']
 
 Route::get('/tenant/contracts/{id}/stream', [TenantContractController::class, 'stream'])
     ->name('tenant.contracts.stream')
+    ->middleware('signed');
+
+// Temporary Signed URL for Protected Tenant Documents Access (15 min expiry)
+Route::get('/admin/tenants/{userId}/documents/{id}/stream', [AdminTenantDocumentController::class, 'stream'])
+    ->name('admin.tenants.documents.stream')
+    ->middleware('signed');
+
+Route::get('/tenant/documents/{id}/stream', [TenantDocumentController::class, 'stream'])
+    ->name('tenant.documents.stream')
     ->middleware('signed');
 
 
@@ -91,14 +122,37 @@ Route::middleware('auth:sanctum')->group(function () {
         // Contracts
         Route::get('/contract', [TenantContractController::class, 'show']);
         Route::post('/contract/sign', [TenantContractController::class, 'sign']);
+
+        // Profile & Identity Documents
+        Route::patch('/profile/nik', [TenantDocumentController::class, 'updateNik']);
+        Route::get('/documents', [TenantDocumentController::class, 'index']);
+        Route::post('/documents', [TenantDocumentController::class, 'store']);
+        Route::delete('/documents/{id}', [TenantDocumentController::class, 'destroy']);
     });
 
     // Admin Group
     Route::prefix('admin')->middleware(EnsureUserIsAdmin::class)->group(function () {
+        // Tenants & Identity Documents Inspection
+        Route::get('/tenants', [AdminTenantDocumentController::class, 'tenants']);
+        Route::get('/tenants/{userId}/documents', [AdminTenantDocumentController::class, 'index']);
+        Route::patch('/tenants/{userId}/documents/{id}/verify', [AdminTenantDocumentController::class, 'verify']);
+
         // Facilities
         Route::get('/facilities', [FacilityController::class, 'index']);
         Route::post('/facilities', [FacilityController::class, 'store']);
         Route::delete('/facilities/{id}', [FacilityController::class, 'destroy']);
+
+        // Properties
+        Route::get('/properties', [PropertyController::class, 'index']);
+        Route::post('/properties', [PropertyController::class, 'store']);
+        Route::get('/properties/{id}', [PropertyController::class, 'show']);
+        Route::put('/properties/{id}', [PropertyController::class, 'update']);
+        Route::delete('/properties/{id}', [PropertyController::class, 'destroy']);
+        Route::get('/properties/{propertyId}/media', [PropertyMediaController::class, 'index']);
+        Route::post('/properties/{propertyId}/media', [PropertyMediaController::class, 'store']);
+        Route::delete('/properties/{propertyId}/media/{mediaId}', [PropertyMediaController::class, 'destroy']);
+        Route::put('/properties/{propertyId}/media/reorder', [PropertyMediaController::class, 'reorder']);
+        Route::patch('/properties/{propertyId}/media/{mediaId}/featured', [PropertyMediaController::class, 'toggleFeatured']);
 
         // Rooms
         Route::get('/rooms', [RoomController::class, 'index']);
@@ -143,6 +197,38 @@ Route::middleware('auth:sanctum')->group(function () {
         // Financial Reports
         Route::get('/reports/income', [ReportController::class, 'income']);
         Route::get('/reports/export', [ReportController::class, 'export']);
+
+        // WhatsApp Messaging & Integration
+        Route::post('/wa/test-send', [WaAdminController::class, 'testSend']);
+        Route::get('/wa/connection-status', [WaAdminController::class, 'connectionStatus']);
+        Route::get('/wa/health', [WaAdminController::class, 'health']);
+        Route::get('/wa/messages', [WaAdminController::class, 'messages']);
+        Route::post('/wa/messages/{id}/resend', [WaAdminController::class, 'resend']);
+
+        // WhatsApp Templates Management
+        Route::get('/wa/templates', [WaTemplateController::class, 'index']);
+        Route::get('/wa/templates/{id}', [WaTemplateController::class, 'show']);
+        Route::put('/wa/templates/{id}', [WaTemplateController::class, 'update']);
+        Route::post('/wa/templates/preview', [WaTemplateController::class, 'preview']);
+
+        // WhatsApp Reminder Rules & Scheduler
+        Route::get('/wa/reminder-rules', [WaReminderRuleController::class, 'index']);
+        Route::post('/wa/reminder-rules', [WaReminderRuleController::class, 'store']);
+        Route::get('/wa/reminder-rules/{id}', [WaReminderRuleController::class, 'show']);
+        Route::put('/wa/reminder-rules/{id}', [WaReminderRuleController::class, 'update']);
+        Route::delete('/wa/reminder-rules/{id}', [WaReminderRuleController::class, 'destroy']);
+        Route::patch('/wa/reminder-rules/{id}/toggle', [WaReminderRuleController::class, 'toggle']);
+        Route::post('/wa/reminders/dry-run', [WaReminderRuleController::class, 'dryRun']);
+        Route::post('/wa/reminders/run', [WaReminderRuleController::class, 'run']);
+        Route::get('/wa/reminder-logs', [WaReminderRuleController::class, 'logs']);
+
+        // WhatsApp Payment Proof Verification
+        Route::get('/wa/payments', [WaPaymentVerificationController::class, 'index']);
+        Route::get('/wa/payments/pending-count', [WaPaymentVerificationController::class, 'pendingCount']);
+        Route::get('/wa/payments/{id}', [WaPaymentVerificationController::class, 'show']);
+        Route::patch('/wa/payments/{id}/verify', [WaPaymentVerificationController::class, 'verify']);
+        Route::post('/wa/payments/manual', [WaPaymentVerificationController::class, 'manualPayment']);
     });
 
 });
+

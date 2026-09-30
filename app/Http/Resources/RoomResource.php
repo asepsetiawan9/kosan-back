@@ -13,6 +13,16 @@ class RoomResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'property_id' => $this->property_id,
+            'property' => $this->whenLoaded('property', function () {
+                return $this->property ? [
+                    'id' => $this->property->id,
+                    'name' => $this->property->name,
+                    'address' => $this->property->address,
+                    'city' => $this->property->city,
+                    'google_maps_url' => $this->property->google_maps_url,
+                ] : null;
+            }),
             'room_number' => $this->room_number,
             'name' => $this->name,
             'type' => $this->type,

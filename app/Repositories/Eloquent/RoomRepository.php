@@ -14,7 +14,11 @@ class RoomRepository implements RoomRepositoryInterface
 {
     public function getPaginated(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = Room::with(['images', 'facilities', 'activeTenancy']);
+        $query = Room::with(['images', 'facilities', 'activeTenancy', 'property']);
+
+        if (!empty($filters['property_id'])) {
+            $query->where('property_id', $filters['property_id']);
+        }
 
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
@@ -38,12 +42,12 @@ class RoomRepository implements RoomRepositoryInterface
 
     public function allAvailable(): Collection
     {
-        return Room::where('status', 'kosong')->orderBy('room_number')->get();
+        return Room::with('property')->where('status', 'kosong')->orderBy('room_number')->get();
     }
 
     public function findById(string $id): ?Room
     {
-        return Room::with(['images', 'facilities', 'activeTenancy.invoices'])->find($id);
+        return Room::with(['images', 'facilities', 'activeTenancy.invoices', 'property'])->find($id);
     }
 
     public function create(array $data): Room

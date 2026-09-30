@@ -59,5 +59,10 @@ class Invoice extends Model
     {
         return $this->status === 'lunas';
     }
+
+    public function reminderLogs(): HasMany
+    {
+        return $this->hasMany(WaReminderLog::class);
+    }
 }
 

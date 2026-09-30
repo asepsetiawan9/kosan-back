@@ -16,7 +16,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminUserSeeder::class,
             FacilitySeeder::class,
+            PropertySeeder::class,
             SampleRoomSeeder::class,
+            WaTemplateSeeder::class,
+            WaReminderRuleSeeder::class,
         ]);
     }
 }
+

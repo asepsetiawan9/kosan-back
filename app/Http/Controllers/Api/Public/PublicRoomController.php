@@ -18,8 +18,12 @@ class PublicRoomController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Room::with(['images', 'primaryImage', 'facilities'])
+        $query = Room::with(['images', 'primaryImage', 'facilities', 'property.media'])
             ->where('status', 'kosong');
+
+        if ($request->filled('property_id')) {
+            $query->where('property_id', $request->query('property_id'));
+        }
 
         if ($request->filled('type')) {
             $query->where('type', $request->query('type'));
@@ -67,7 +71,7 @@ class PublicRoomController extends Controller
      */
     public function show(string $id): PublicRoomResource|JsonResponse
     {
-        $room = Room::with(['images', 'primaryImage', 'facilities'])
+        $room = Room::with(['images', 'primaryImage', 'facilities', 'property.media'])
             ->where('id', $id)
             ->where('status', '!=', 'maintenance')
             ->first();

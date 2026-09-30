@@ -47,8 +47,10 @@ class TenantProfileResource extends JsonResource
             'name' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone,
+            'nik' => $user->nik,
             'role' => $user->role,
             'must_change_password' => $user->must_change_password,
+            'documents' => TenantDocumentResource::collection($user->documents),
             'has_active_tenancy' => $activeTenancy !== null,
             'active_tenancy' => $activeTenancy ? [
                 'id' => $activeTenancy->id,

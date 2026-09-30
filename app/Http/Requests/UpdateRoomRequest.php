@@ -19,6 +19,7 @@ class UpdateRoomRequest extends FormRequest
         $roomId = $this->route('id') ?? $this->route('room');
 
         return [
+            'property_id' => ['nullable', 'uuid', 'exists:properties,id'],
             'room_number' => ['sometimes', 'required', 'string', 'max:50', Rule::unique('rooms', 'room_number')->ignore($roomId)],
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'type' => ['sometimes', 'required', 'in:standar,deluxe,vip,paviliun'],

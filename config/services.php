@@ -39,5 +39,17 @@ return [
         'is_3ds' => true,
     ],
 
+    'whatsapp' => [
+        'provider' => env('WA_PROVIDER', 'fake'), // 'fonnte', 'fake'
+        'fonnte_token' => env('WA_FONNTE_TOKEN', ''),
+        'webhook_secret' => env('WA_WEBHOOK_SECRET', ''),
+        'send_delay_min' => (int) env('WA_SEND_DELAY_MIN', 3),
+        'send_delay_max' => (int) env('WA_SEND_DELAY_MAX', 10),
+        'media_max_mb' => (int) env('WA_MEDIA_MAX_MB', 5),
+        'storage_disk' => env('WA_STORAGE_DISK', 'private'),
+        'admin_notify_number' => env('WA_ADMIN_NOTIFY_NUMBER', ''),
+    ],
+
 ];
+
 

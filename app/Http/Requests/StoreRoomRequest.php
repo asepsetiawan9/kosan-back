@@ -16,6 +16,7 @@ class StoreRoomRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'property_id' => ['nullable', 'uuid', 'exists:properties,id'],
             'room_number' => ['required', 'string', 'max:50', 'unique:rooms,room_number'],
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'in:standar,deluxe,vip,paviliun'],

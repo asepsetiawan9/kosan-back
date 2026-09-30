@@ -27,6 +27,14 @@ class PaymentRepository implements PaymentRepositoryInterface
             $query->where('method', $filters['method']);
         }
 
+        if (!empty($filters['source'])) {
+            $query->where('source', $filters['source']);
+        }
+
+        if (isset($filters['is_duplicate_suspect']) && $filters['is_duplicate_suspect'] !== '' && $filters['is_duplicate_suspect'] !== 'all') {
+            $query->where('is_duplicate_suspect', filter_var($filters['is_duplicate_suspect'], FILTER_VALIDATE_BOOLEAN));
+        }
+
         if (!empty($filters['invoice_id'])) {
             $query->where('invoice_id', $filters['invoice_id']);
         }
@@ -35,6 +43,7 @@ class PaymentRepository implements PaymentRepositoryInterface
             $search = (string) $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('gateway_transaction_id', 'like', "%{$search}%")
+                    ->orWhere('proof_sha256', 'like', "%{$search}%")
                     ->orWhereHas('invoice', function ($iq) use ($search) {
                         $iq->where('invoice_number', 'like', "%{$search}%")
                             ->orWhereHas('tenancy', function ($tq) use ($search) {
@@ -54,6 +63,7 @@ class PaymentRepository implements PaymentRepositoryInterface
             'invoice.tenancy.room',
             'invoice.tenancy.user',
             'verifier',
+            'waMessage',
         ])->find($id);
     }
 
@@ -81,5 +91,17 @@ class PaymentRepository implements PaymentRepositoryInterface
             ->where('invoice_id', $invoiceId)
             ->latest()
             ->get();
+    }
+
+    public function getPendingWaPaymentsCount(): int
+    {
+        return Payment::where('status', 'pending')
+            ->where('source', 'whatsapp')
+            ->count();
+    }
+
+    public function findByProofSha256(string $sha256): ?Payment
+    {
+        return Payment::where('proof_sha256', $sha256)->latest()->first();
     }
 }

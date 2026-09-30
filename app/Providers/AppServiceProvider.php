@@ -19,6 +19,7 @@ use App\Repositories\Contracts\ContractRepositoryInterface;
 use App\Repositories\Contracts\FacilityRepositoryInterface;
 use App\Repositories\Contracts\InvoiceRepositoryInterface;
 use App\Repositories\Contracts\PaymentRepositoryInterface;
+use App\Repositories\Contracts\PropertyRepositoryInterface;
 use App\Repositories\Contracts\RoomRepositoryInterface;
 use App\Repositories\Contracts\TenancyRepositoryInterface;
 use App\Repositories\Eloquent\BookingRepository;
@@ -27,6 +28,7 @@ use App\Repositories\Eloquent\ContractRepository;
 use App\Repositories\Eloquent\FacilityRepository;
 use App\Repositories\Eloquent\InvoiceRepository;
 use App\Repositories\Eloquent\PaymentRepository;
+use App\Repositories\Eloquent\PropertyRepository;
 use App\Repositories\Eloquent\RoomRepository;
 use App\Repositories\Eloquent\TenancyRepository;
 use Illuminate\Support\Facades\Gate;
@@ -40,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(FacilityRepositoryInterface::class, FacilityRepository::class);
+        $this->app->bind(PropertyRepositoryInterface::class, PropertyRepository::class);
         $this->app->bind(RoomRepositoryInterface::class, RoomRepository::class);
         $this->app->bind(TenancyRepositoryInterface::class, TenancyRepository::class);
         $this->app->bind(InvoiceRepositoryInterface::class, InvoiceRepository::class);
@@ -47,7 +50,42 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ComplaintRepositoryInterface::class, ComplaintRepository::class);
         $this->app->bind(PaymentRepositoryInterface::class, PaymentRepository::class);
         $this->app->bind(ContractRepositoryInterface::class, ContractRepository::class);
+        $this->app->bind(
+            \App\Repositories\Contracts\TenantDocumentRepositoryInterface::class,
+            \App\Repositories\Eloquent\TenantDocumentRepository::class
+        );
+        $this->app->bind(
+            \App\Repositories\Contracts\PropertyMediaRepositoryInterface::class,
+            \App\Repositories\Eloquent\PropertyMediaRepository::class
+        );
+        $this->app->bind(
+            \App\Repositories\Contracts\WaMessageRepositoryInterface::class,
+            \App\Repositories\Eloquent\WaMessageRepository::class
+        );
+        $this->app->bind(
+            \App\Repositories\Contracts\WaTemplateRepositoryInterface::class,
+            \App\Repositories\Eloquent\WaTemplateRepository::class
+        );
+        $this->app->bind(
+            \App\Repositories\Contracts\WaReminderRuleRepositoryInterface::class,
+            \App\Repositories\Eloquent\WaReminderRuleRepository::class
+        );
+        $this->app->bind(
+            \App\Repositories\Contracts\WaConversationRepositoryInterface::class,
+            \App\Repositories\Eloquent\WaConversationRepository::class
+        );
+        $this->app->bind(
+            \App\Contracts\WhatsAppProviderInterface::class,
+            function () {
+                $provider = config('services.whatsapp.provider', 'fake');
+                if ($provider === 'fonnte') {
+                    return new \App\Services\WhatsApp\FonnteProvider();
+                }
+                return new \App\Services\WhatsApp\FakeProvider();
+            }
+        );
     }
+
 
     /**
      * Bootstrap any application services.
