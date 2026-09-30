@@ -228,11 +228,12 @@ class WaHealthCheckService
         array $queue,
         array $metrics
     ): string {
-        if (($db['status'] ?? '') === 'error' || ($provider['status'] ?? '') === 'error') {
+        if (($db['status'] ?? '') === 'error') {
             return 'unhealthy';
         }
 
         if (
+            ($provider['status'] ?? '') === 'error' ||
             ($queue['status'] ?? '') === 'warning' ||
             ($metrics['status'] ?? '') === 'warning'
         ) {

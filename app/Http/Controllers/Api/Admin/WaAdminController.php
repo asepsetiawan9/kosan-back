@@ -64,11 +64,10 @@ class WaAdminController extends Controller
     public function health(\App\Services\WaHealthCheckService $healthService): JsonResponse
     {
         $health = $healthService->checkHealth();
-        $httpCode = $health['status'] === 'unhealthy' ? 503 : 200;
 
         return response()->json([
             'data' => $health,
-        ], $httpCode);
+        ], 200);
     }
 
     /**

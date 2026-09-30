@@ -204,14 +204,16 @@ class FonnteProvider implements WhatsAppProviderInterface
             $json = $response->json();
 
             if ($response->successful() && isset($json['status']) && $json['status'] === true) {
+                $isConnect = ($json['device_status'] ?? '') === 'connect';
                 return [
-                    'status' => $json['device_status'] === 'connect' ? 'connected' : 'disconnected',
+                    'status' => $isConnect ? 'connected' : 'disconnected',
                     'provider' => 'fonnte',
                     'device' => $json['device'] ?? 'Fonnte Device',
                     'phone' => $json['device'] ?? null,
                     'device_status' => $json['device_status'] ?? 'unknown',
                     'quota' => $json['quota'] ?? 'N/A',
                     'expired' => $json['expired'] ?? null,
+                    'message' => $isConnect ? 'Koneksi ke gateway WhatsApp aktif' : 'Perangkat WhatsApp belum terhubung (silakan scan QR di md.fonnte.com)',
                     'is_configured' => true,
                 ];
             }
