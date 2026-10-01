@@ -217,7 +217,6 @@ class Phase5ContractAndReportTest extends TestCase
             'tenancy_id' => $this->tenancy->id,
             'invoice_number' => 'INV-202609-001',
             'period' => Carbon::now()->format('Y-m'),
-            'issue_date' => Carbon::now()->toDateString(),
             'due_date' => Carbon::now()->addDays(7)->toDateString(),
             'total_amount' => 2000000.00,
             'status' => 'sebagian_dibayar',

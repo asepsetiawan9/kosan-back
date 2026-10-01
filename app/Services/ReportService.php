@@ -91,7 +91,7 @@ class ReportService
         }
 
         // Pending receivables (Invoices not yet paid)
-        $pendingReceivables = (float) Invoice::whereIn('status', ['belum_dibayar', 'sebagian_dibayar', 'terlambat'])
+        $pendingReceivables = (float) Invoice::whereIn('status', ['belum_bayar', 'sebagian_dibayar', 'terlambat'])
             ->with(['payments'])
             ->get()
             ->sum(function (Invoice $inv) {
@@ -216,8 +216,8 @@ class ReportService
                 ->whereMonth('created_at', $m)
                 ->sum('amount');
 
-            $invoicesIssued = (float) Invoice::whereYear('issue_date', $y)
-                ->whereMonth('issue_date', $m)
+            $invoicesIssued = (float) Invoice::whereYear('created_at', $y)
+                ->whereMonth('created_at', $m)
                 ->sum('total_amount');
 
             $trend[] = [
