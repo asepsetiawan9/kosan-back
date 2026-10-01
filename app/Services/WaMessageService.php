@@ -10,13 +10,15 @@ use App\Models\User;
 use App\Models\WaMessage;
 use App\Repositories\Contracts\WaMessageRepositoryInterface;
 use App\Support\PhoneNumber;
+use App\Services\WhatsApp\WaAntiBanGuard;
 use InvalidArgumentException;
 
 class WaMessageService
 {
     public function __construct(
         protected WhatsAppProviderInterface $provider,
-        protected WaMessageRepositoryInterface $messageRepo
+        protected WaMessageRepositoryInterface $messageRepo,
+        protected WaAntiBanGuard $antiBanGuard
     ) {}
 
     /**
@@ -110,6 +112,23 @@ class WaMessageService
                 'min' => config('services.whatsapp.send_delay_min', 3),
                 'max' => config('services.whatsapp.send_delay_max', 10),
             ],
+            'antiban' => $this->antiBanGuard->getStatus(),
         ];
+    }
+
+    /**
+     * Reset the anti-ban circuit breaker manually.
+     */
+    public function resetCircuitBreaker(): void
+    {
+        $this->antiBanGuard->resetCircuitBreaker();
+    }
+
+    /**
+     * Get anti-ban guard instance.
+     */
+    public function getAntiBanGuard(): WaAntiBanGuard
+    {
+        return $this->antiBanGuard;
     }
 }

@@ -7,9 +7,11 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote')->hourly();
 
-// Jalankan pengingat tagihan WhatsApp otomatis setiap 15 menit
+// Jalankan pengingat tagihan WhatsApp otomatis setiap 15 menit hanya pada jam operasional (08:00 - 20:00 WIB)
 \Illuminate\Support\Facades\Schedule::command('wa:run-reminders')
     ->everyFifteenMinutes()
+    ->between('08:00', '20:00')
+    ->timezone('Asia/Jakarta')
     ->withoutOverlapping();
 
 // Reset percakapan chatbot WhatsApp yang melewati batas TTL (30 menit) setiap 5 menit

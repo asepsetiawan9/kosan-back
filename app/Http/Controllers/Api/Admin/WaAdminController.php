@@ -37,6 +37,7 @@ class WaAdminController extends Controller
 
         $message = $service->send($phone, $body, [
             'template_key' => $templateKey,
+            'related_type' => 'test_send',
             'force' => true, // Admin test send ignores opt-out
         ]);
 
@@ -124,6 +125,19 @@ class WaAdminController extends Controller
         return response()->json([
             'data' => WaTemplateResource::collection($templates),
             'placeholders' => $renderer->getSupportedPlaceholders(),
+        ], 200);
+    }
+
+    /**
+     * Manually reset the anti-ban circuit breaker.
+     */
+    public function resetCircuitBreaker(WaMessageService $service): JsonResponse
+    {
+        $service->resetCircuitBreaker();
+
+        return response()->json([
+            'message' => 'Anti-ban circuit breaker berhasil di-reset.',
+            'data' => $service->getConnectionStatus()['antiban'],
         ], 200);
     }
 }

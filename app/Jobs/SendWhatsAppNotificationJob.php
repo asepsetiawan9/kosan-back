@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Services\WaMessageService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -32,9 +33,8 @@ class SendWhatsAppNotificationJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(): void
+    public function handle(WaMessageService $messageService): void
     {
-        // Standar log terstruktur siap integrasi Fonnte/Wablas di Fase 4
         Log::info('[WHATSAPP NOTIFICATION DISPATCHED]', [
             'to' => $this->phone,
             'context' => $this->context,
@@ -42,6 +42,14 @@ class SendWhatsAppNotificationJob implements ShouldQueue
             'timestamp' => now()->toIso8601String(),
         ]);
 
-        // Catatan: Adaptor API eksternal dapat dihubungkan di sini
+        // Route through unified WaMessageService with anti-ban guard and queue protection
+        try {
+            $messageService->send($this->phone, $this->message, [
+                'template_key' => $this->context,
+                'force' => false,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('[SendWhatsAppNotificationJob] Skipped queuing WaMessage: ' . $e->getMessage());
+        }
     }
 }

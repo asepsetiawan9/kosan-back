@@ -6,6 +6,8 @@ namespace App\Jobs;
 
 use App\Contracts\WhatsAppProviderInterface;
 use App\Repositories\Contracts\WaMessageRepositoryInterface;
+use App\Services\WhatsApp\WaAntiBanGuard;
+use App\Services\WhatsApp\WaMessageHumanizer;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -36,7 +38,9 @@ class SendWhatsAppMessageJob implements ShouldQueue
 
     public function handle(
         WhatsAppProviderInterface $provider,
-        WaMessageRepositoryInterface $messageRepo
+        WaMessageRepositoryInterface $messageRepo,
+        WaAntiBanGuard $antiBanGuard,
+        WaMessageHumanizer $humanizer
     ): void {
         $message = $messageRepo->findById($this->messageId);
 
@@ -50,12 +54,28 @@ class SendWhatsAppMessageJob implements ShouldQueue
             return;
         }
 
-        // Random delay between 3-10 seconds to prevent anti-ban on unofficial gateways (skip in testing)
+        // Direct replies (chatbot interactions, proof confirmations, admin test sends) bypass business hours restriction
+        $isDirectReply = str_starts_with((string) $message->template_key, 'bot_')
+            || str_starts_with((string) $message->template_key, 'proof_')
+            || (string) $message->related_type === 'chatbot'
+            || (string) $message->related_type === 'test_send'
+            || (string) $message->related_type === 'manual_admin';
+
+        // Anti-ban check (hourly limit, daily limit, business hours, circuit breaker)
+        $guardCheck = $antiBanGuard->canSend($isDirectReply);
+        if (!$guardCheck['allowed']) {
+            $retryAfter = $guardCheck['retry_after_seconds'] ?? 300;
+            Log::warning("[SendWhatsAppMessageJob] Anti-ban rate limit active: {$guardCheck['reason']}. Releasing message {$message->id} back to queue for {$retryAfter} seconds.");
+
+            $this->release($retryAfter);
+            return;
+        }
+
+        // Randomized human-like delay to simulate natural pacing (skip in testing)
         if (!App::environment('testing')) {
-            $minDelay = (int) config('services.whatsapp.send_delay_min', 3);
-            $maxDelay = (int) config('services.whatsapp.send_delay_max', 10);
-            if ($maxDelay >= $minDelay && $maxDelay > 0) {
-                sleep(random_int($minDelay, $maxDelay));
+            $delay = $antiBanGuard->getRandomDelay();
+            if ($delay > 0) {
+                sleep($delay);
             }
         }
 
@@ -64,9 +84,14 @@ class SendWhatsAppMessageJob implements ShouldQueue
             'attempts' => $attempts,
         ]);
 
-        $result = $provider->sendText($message->phone, (string) $message->body);
+        // Humanize message to prevent identical fingerprint detection
+        $body = $humanizer->humanize((string) $message->body);
+
+        $result = $provider->sendText($message->phone, $body);
 
         if ($result->success) {
+            $antiBanGuard->recordSent();
+
             $messageRepo->update($message, [
                 'status' => 'sent',
                 'sent_at' => now(),
@@ -78,6 +103,9 @@ class SendWhatsAppMessageJob implements ShouldQueue
             Log::info("[SendWhatsAppMessageJob] Message {$message->id} successfully sent to {$message->phone}");
             return;
         }
+
+        // Record failure in anti-ban circuit breaker
+        $antiBanGuard->recordFailure();
 
         // Failed attempt
         $messageRepo->update($message, [
@@ -93,7 +121,6 @@ class SendWhatsAppMessageJob implements ShouldQueue
             Log::error("[SendWhatsAppMessageJob] Message {$message->id} permanently failed after {$this->tries} attempts. Error: {$result->errorMessage}");
             return;
         }
-
 
         // Re-throw exception to let queue worker retry with backoff
         throw new Exception("WhatsApp delivery failed (attempt {$attempts}): {$result->errorMessage}");

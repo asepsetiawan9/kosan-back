@@ -201,6 +201,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // WhatsApp Messaging & Integration
         Route::post('/wa/test-send', [WaAdminController::class, 'testSend']);
         Route::get('/wa/connection-status', [WaAdminController::class, 'connectionStatus']);
+        Route::post('/wa/antiban/reset-circuit', [WaAdminController::class, 'resetCircuitBreaker']);
         Route::get('/wa/health', [WaAdminController::class, 'health']);
         Route::get('/wa/messages', [WaAdminController::class, 'messages']);
         Route::post('/wa/messages/{id}/resend', [WaAdminController::class, 'resend']);

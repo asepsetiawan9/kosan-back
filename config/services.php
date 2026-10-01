@@ -48,6 +48,19 @@ return [
         'media_max_mb' => (int) env('WA_MEDIA_MAX_MB', 5),
         'storage_disk' => env('WA_STORAGE_DISK', 'private'),
         'admin_notify_number' => env('WA_ADMIN_NOTIFY_NUMBER', ''),
+        'antiban' => [
+            'enabled' => (bool) env('WA_ANTIBAN_ENABLED', true),
+            'hourly_max' => (int) env('WA_ANTIBAN_HOURLY_MAX', 10),
+            'daily_max' => (int) env('WA_ANTIBAN_DAILY_MAX', 50),
+            'delay_min' => (int) env('WA_ANTIBAN_DELAY_MIN', 8),
+            'delay_max' => (int) env('WA_ANTIBAN_DELAY_MAX', 20),
+            'business_hours_start' => (int) env('WA_ANTIBAN_HOURS_START', 8),
+            'business_hours_end' => (int) env('WA_ANTIBAN_HOURS_END', 20),
+            'circuit_breaker_threshold' => (int) env('WA_ANTIBAN_CIRCUIT_THRESHOLD', 3),
+            'circuit_cooldown_minutes' => (int) env('WA_ANTIBAN_CIRCUIT_COOLDOWN', 30),
+            'unknown_reply_max_per_day' => (int) env('WA_ANTIBAN_UNKNOWN_REPLY_MAX', 2),
+            'humanize_messages' => (bool) env('WA_ANTIBAN_HUMANIZE', true),
+        ],
     ],
 
 ];

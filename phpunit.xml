@@ -30,5 +30,6 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="WA_PROVIDER" value="fake"/>
+        <env name="WA_ANTIBAN_ENABLED" value="false"/>
     </php>
 </phpunit>

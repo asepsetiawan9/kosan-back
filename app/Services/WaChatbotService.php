@@ -16,12 +16,15 @@ use App\Support\PhoneNumber;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
+use App\Services\WhatsApp\WaAntiBanGuard;
+
 class WaChatbotService
 {
     public function __construct(
         protected WaConversationRepositoryInterface $conversationRepo,
         protected WaMessageService $messageService,
-        protected WaTemplateRenderer $templateRenderer
+        protected WaTemplateRenderer $templateRenderer,
+        protected WaAntiBanGuard $antiBanGuard
     ) {}
 
     /**
@@ -76,6 +79,18 @@ class WaChatbotService
     protected function handleUnknownSender(IncomingMessage $msg, WaMessage $waMessage): void
     {
         Log::info("[WaChatbot] Unknown sender: {$msg->from}");
+
+        // Anti-ban: Throttle replies to unregistered numbers to prevent spam loops
+        if (!$this->antiBanGuard->canReplyToUnknown($msg->from)) {
+            Log::warning("[WaChatbot] Unknown sender {$msg->from} throttled by anti-ban. Suppressing auto-reply.");
+            $waMessage->update([
+                'status' => 'ignored',
+                'error_message' => 'Dibatasi sistem anti-ban: pengirim tak dikenal melebihi batas balasan harian.',
+            ]);
+            return;
+        }
+
+        $this->antiBanGuard->recordUnknownReply($msg->from);
 
         $waMessage->update([
             'status' => 'ignored',
