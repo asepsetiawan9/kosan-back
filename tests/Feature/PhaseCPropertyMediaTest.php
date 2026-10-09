@@ -87,30 +87,43 @@ class PhaseCPropertyMediaTest extends TestCase
         Storage::disk('public')->assertExists($savedMedia->file_path);
     }
 
-    public function test_admin_can_upload_video_media_and_thumbnail_to_property(): void
+    public function test_admin_can_link_youtube_video_media_to_property(): void
     {
-        // 1MB fake mp4 video
-        $videoFile = UploadedFile::fake()->create('tour_kosan.mp4', 1024, 'video/mp4');
-        $thumbFile = UploadedFile::fake()->image('tour_thumb.jpg', 640, 360);
-
         $response = $this->actingAs($this->admin, 'sanctum')
             ->postJson("/api/admin/properties/{$this->property->id}/media", [
-                'file' => $videoFile,
-                'thumbnail' => $thumbFile,
+                'media_type' => 'video',
+                'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
                 'title' => 'Video Virtual Tour Kosan',
                 'description' => 'Suasana lorong, dapur bersama, dan area parkir',
+                'is_featured' => true,
             ]);
 
         $response->assertStatus(201)
             ->assertJsonPath('data.media_type', 'video')
-            ->assertJsonPath('data.title', 'Video Virtual Tour Kosan');
+            ->assertJsonPath('data.title', 'Video Virtual Tour Kosan')
+            ->assertJsonPath('data.youtube_id', 'dQw4w9WgXcQ');
 
         $mediaId = $response->json('data.id');
         $savedMedia = PropertyMedia::find($mediaId);
         $this->assertNotNull($savedMedia);
         $this->assertEquals('video', $savedMedia->media_type);
-        Storage::disk('public')->assertExists($savedMedia->file_path);
-        Storage::disk('public')->assertExists($savedMedia->thumbnail_path);
+        $this->assertEquals('https://www.youtube.com/watch?v=dQw4w9WgXcQ', $savedMedia->file_path);
+        $this->assertEquals('https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg', $savedMedia->thumbnail_url);
+    }
+
+    public function test_admin_cannot_upload_raw_video_file(): void
+    {
+        $videoFile = UploadedFile::fake()->create('tour_kosan.mp4', 1024, 'video/mp4');
+
+        $response = $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/admin/properties/{$this->property->id}/media", [
+                'media_type' => 'video',
+                'file' => $videoFile,
+                'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['file']);
     }
 
     public function test_upload_rejects_file_exceeding_size_limit(): void

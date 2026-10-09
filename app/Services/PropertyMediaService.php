@@ -39,32 +39,69 @@ class PropertyMediaService
 
     public function uploadMedia(
         Property $property,
-        UploadedFile $file,
+        ?UploadedFile $file = null,
         ?UploadedFile $thumbnail = null,
         array $attributes = []
     ): PropertyMedia {
-        $mime = $file->getMimeType() ?? '';
-        $isVideo = str_starts_with($mime, 'video/');
-        $mediaType = $attributes['media_type'] ?? ($isVideo ? 'video' : 'image');
+        $mediaType = $attributes['media_type'] ?? 'image';
 
         if ($mediaType === 'video') {
-            // Validasi ukuran video maksimal 50MB (51200 KB)
-            if ($file->getSize() > 52428800) {
+            $youtubeUrl = $attributes['youtube_url'] ?? $attributes['url'] ?? '';
+            if (empty($youtubeUrl)) {
                 throw ValidationException::withMessages([
-                    'file' => 'Ukuran file video maksimal 50MB.',
+                    'youtube_url' => 'Link video YouTube wajib diisi.',
                 ]);
             }
-            $folder = "property-media/{$property->id}/videos";
-        } else {
-            // Validasi ukuran foto maksimal 5MB (5120 KB)
-            if ($file->getSize() > 5242880) {
-                throw ValidationException::withMessages([
-                    'file' => 'Ukuran file gambar maksimal 5MB.',
-                ]);
+
+            $youtubeId = $this->extractYoutubeId($youtubeUrl);
+            $filePath = $youtubeUrl;
+
+            $thumbnailPath = null;
+            if ($thumbnail) {
+                $thumbExt = $thumbnail->getClientOriginalExtension();
+                $thumbName = Str::uuid()->toString() . '.' . $thumbExt;
+                $thumbnailPath = Storage::disk('public')->putFileAs(
+                    "property-media/{$property->id}/thumbnails",
+                    $thumbnail,
+                    $thumbName
+                );
+            } elseif ($youtubeId) {
+                $thumbnailPath = "https://img.youtube.com/vi/{$youtubeId}/hqdefault.jpg";
             }
-            $folder = "property-media/{$property->id}/images";
+
+            $currentMedia = $this->mediaRepository->getByProperty($property->id);
+            $nextSortOrder = isset($attributes['sort_order'])
+                ? (int) $attributes['sort_order']
+                : ($currentMedia->max('sort_order') ?? 0) + 1;
+
+            $isFeatured = isset($attributes['is_featured']) ? (bool) $attributes['is_featured'] : false;
+
+            return $this->mediaRepository->create([
+                'property_id' => $property->id,
+                'media_type' => 'video',
+                'file_path' => $filePath,
+                'thumbnail_path' => $thumbnailPath,
+                'title' => $attributes['title'] ?? null,
+                'description' => $attributes['description'] ?? null,
+                'sort_order' => $nextSortOrder,
+                'is_featured' => $isFeatured,
+            ]);
         }
 
+        if (!$file) {
+            throw ValidationException::withMessages([
+                'file' => 'Berkas gambar wajib diunggah.',
+            ]);
+        }
+
+        // Validasi ukuran foto maksimal 5MB (5120 KB)
+        if ($file->getSize() > 5242880) {
+            throw ValidationException::withMessages([
+                'file' => 'Ukuran file gambar maksimal 5MB.',
+            ]);
+        }
+
+        $folder = "property-media/{$property->id}/images";
         $extension = $file->getClientOriginalExtension();
         $safeFileName = Str::uuid()->toString() . '.' . $extension;
         $filePath = Storage::disk('public')->putFileAs($folder, $file, $safeFileName);
@@ -89,7 +126,7 @@ class PropertyMediaService
 
         return $this->mediaRepository->create([
             'property_id' => $property->id,
-            'media_type' => $mediaType,
+            'media_type' => 'image',
             'file_path' => $filePath,
             'thumbnail_path' => $thumbnailPath,
             'title' => $attributes['title'] ?? null,
@@ -97,6 +134,15 @@ class PropertyMediaService
             'sort_order' => $nextSortOrder,
             'is_featured' => $isFeatured,
         ]);
+    }
+
+    private function extractYoutubeId(string $url): ?string
+    {
+        $pattern = '/(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/i';
+        if (preg_match($pattern, $url, $matches)) {
+            return $matches[1];
+        }
+        return null;
     }
 
     public function deleteMedia(string $propertyId, string $mediaId): bool

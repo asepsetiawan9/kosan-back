@@ -9,6 +9,7 @@ use App\Models\RoomImage;
 use App\Repositories\Contracts\RoomRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class RoomRepository implements RoomRepositoryInterface
 {
@@ -63,7 +64,15 @@ class RoomRepository implements RoomRepositoryInterface
 
     public function delete(Room $room): bool
     {
-        return (bool) $room->delete();
+        return DB::transaction(function () use ($room) {
+            if ($room->tenancies()->count() === 0) {
+                $room->facilities()->detach();
+                $room->images()->delete();
+                return (bool) $room->forceDelete();
+            }
+
+            return (bool) $room->delete();
+        });
     }
 
     public function syncFacilities(Room $room, array $facilityIds): void

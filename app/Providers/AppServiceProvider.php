@@ -58,6 +58,10 @@ class AppServiceProvider extends ServiceProvider
             \App\Repositories\Contracts\PropertyMediaRepositoryInterface::class,
             \App\Repositories\Eloquent\PropertyMediaRepository::class
         );
+        $this->app->bind(
+            \App\Repositories\Contracts\PublicComplaintRepositoryInterface::class,
+            \App\Repositories\Eloquent\PublicComplaintRepository::class
+        );
     }
 
 

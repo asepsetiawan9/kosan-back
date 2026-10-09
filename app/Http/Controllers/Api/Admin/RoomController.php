@@ -39,6 +39,15 @@ class RoomController extends Controller
         $facilityIds = $request->validated('facility_ids', []);
         $images = $request->validated('images', []);
 
+        $uploadedFile = $request->file('image') ?? $request->file('photo');
+        if ($uploadedFile) {
+            $images[] = [
+                'file' => $uploadedFile,
+                'is_primary' => true,
+                'order' => 0,
+            ];
+        }
+
         $room = $this->roomService->createRoom($data, $facilityIds, $images);
 
         return response()->json([
@@ -63,8 +72,36 @@ class RoomController extends Controller
 
         $room = $this->roomService->updateRoom($id, $data, $facilityIds);
 
+        $uploadedFile = $request->file('image') ?? $request->file('photo');
+        if ($uploadedFile) {
+            $this->roomService->addRoomImage($id, $uploadedFile, isPrimary: true);
+            $room->load('images');
+        }
+
         return response()->json([
             'message' => 'Data kamar berhasil diperbarui.',
+            'data' => new RoomResource($room),
+        ]);
+    }
+
+    public function uploadImage(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'image' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            'photo' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            'file' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+        ]);
+
+        $file = $request->file('image') ?? $request->file('photo') ?? $request->file('file');
+        if (!$file) {
+            return response()->json(['message' => 'Tidak ada berkas foto yang diunggah.'], 422);
+        }
+
+        $this->roomService->addRoomImage($id, $file, isPrimary: true);
+        $room = $this->roomService->getRoomById($id);
+
+        return response()->json([
+            'message' => 'Foto kamar berhasil diunggah.',
             'data' => new RoomResource($room),
         ]);
     }

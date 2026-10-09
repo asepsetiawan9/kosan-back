@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\BillingController;
 use App\Http\Controllers\Api\Admin\BillingTemplateController;
 use App\Http\Controllers\Api\Admin\BookingApprovalController;
 use App\Http\Controllers\Api\Admin\ComplaintController as AdminComplaintController;
+use App\Http\Controllers\Api\Admin\PublicComplaintController as AdminPublicComplaintController;
 use App\Http\Controllers\Api\Admin\ContractController;
 use App\Http\Controllers\Api\Admin\FacilityController;
 use App\Http\Controllers\Api\Admin\InvoiceController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Api\AuthController;
 
 use App\Http\Controllers\Api\PaymentWebhookController;
 use App\Http\Controllers\Api\Public\PublicBookingController;
+use App\Http\Controllers\Api\Public\PublicComplaintController;
 use App\Http\Controllers\Api\Public\PublicPropertyController;
 use App\Http\Controllers\Api\Public\PublicRoomController;
 use App\Http\Controllers\Api\Tenant\TenantAuthController;
@@ -50,6 +52,7 @@ Route::prefix('public')->group(function () {
     Route::get('/properties', [PublicPropertyController::class, 'index']);
     Route::get('/properties/{id}', [PublicPropertyController::class, 'show']);
     Route::post('/bookings', [PublicBookingController::class, 'store'])->middleware('throttle:5,1');
+    Route::post('/complaints', [PublicComplaintController::class, 'store'])->middleware('throttle:5,1');
 });
 
 // Payment Gateway Webhook (Signature verified & Idempotent)
@@ -148,7 +151,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/rooms/available', [RoomController::class, 'available']);
         Route::post('/rooms', [RoomController::class, 'store']);
         Route::get('/rooms/{id}', [RoomController::class, 'show']);
-        Route::put('/rooms/{id}', [RoomController::class, 'update']);
+        Route::match(['put', 'post'], '/rooms/{id}', [RoomController::class, 'update']);
+        Route::post('/rooms/{id}/images', [RoomController::class, 'uploadImage']);
         Route::delete('/rooms/{id}', [RoomController::class, 'destroy']);
 
         // Tenancies
@@ -178,10 +182,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/bookings/{id}/approve', [BookingApprovalController::class, 'approve']);
         Route::patch('/bookings/{id}/reject', [BookingApprovalController::class, 'reject']);
 
-        // Complaints Management
+        // Complaints Management (Tenants)
         Route::get('/complaints', [AdminComplaintController::class, 'index']);
         Route::get('/complaints/{id}', [AdminComplaintController::class, 'show']);
         Route::patch('/complaints/{id}', [AdminComplaintController::class, 'update']);
+
+        // Public Complaints Management (Guests / Public)
+        Route::get('/public-complaints', [AdminPublicComplaintController::class, 'index']);
+        Route::get('/public-complaints/{id}', [AdminPublicComplaintController::class, 'show']);
+        Route::patch('/public-complaints/{id}', [AdminPublicComplaintController::class, 'update']);
 
         // Financial Reports
         Route::get('/reports/income', [ReportController::class, 'income']);

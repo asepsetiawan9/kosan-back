@@ -80,7 +80,7 @@ class RoomService
         $room = $this->getRoomById($id);
 
         // Integritas penghapusan: Kamar tidak dapat dihapus jika memiliki sewa aktif
-        if ($this->tenancyRepository->hasActiveTenancy($room->id)) {
+        if ($this->tenancyRepository->hasActiveTenancy($room->id) || $room->status === 'terisi') {
             throw ValidationException::withMessages([
                 'room' => ['Kamar tidak dapat dihapus karena sedang dalam masa sewa aktif. Lakukan checkout terlebih dahulu.'],
             ]);

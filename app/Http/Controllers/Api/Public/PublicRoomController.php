@@ -18,8 +18,15 @@ class PublicRoomController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Room::with(['images', 'primaryImage', 'facilities', 'property.media'])
-            ->where('status', 'kosong');
+        $query = Room::with(['images', 'primaryImage', 'facilities', 'property.media']);
+
+        if ($request->query('status') === 'all' || $request->boolean('all')) {
+            $query->where('status', '!=', 'maintenance');
+        } elseif ($request->filled('status')) {
+            $query->where('status', $request->query('status'));
+        } else {
+            $query->where('status', 'kosong');
+        }
 
         if ($request->filled('property_id')) {
             $query->where('property_id', $request->query('property_id'));

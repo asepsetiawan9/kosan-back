@@ -17,6 +17,8 @@ class PropertyMediaResource extends JsonResource
             'media_type' => $this->media_type,
             'file_path' => $this->file_path,
             'url' => $this->url,
+            'youtube_id' => $this->youtube_id,
+            'embed_url' => $this->embed_url,
             'thumbnail_path' => $this->thumbnail_path,
             'thumbnail_url' => $this->thumbnail_url,
             'title' => $this->title,

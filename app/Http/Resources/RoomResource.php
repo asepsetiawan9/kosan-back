@@ -29,13 +29,16 @@ class RoomResource extends JsonResource
             'base_price' => (float) $this->base_price,
             'description' => $this->description,
             'status' => $this->status,
-            'primary_image' => $this->images?->firstWhere('is_primary', true)?->image_path 
+            'primary_image' => $this->images?->firstWhere('is_primary', true)?->url 
+                ?? $this->images?->first()?->url
+                ?? $this->images?->firstWhere('is_primary', true)?->image_path 
                 ?? $this->images?->first()?->image_path,
             'images' => $this->whenLoaded('images', function () {
                 return $this->images->map(function ($img) {
                     return [
                         'id' => $img->id,
                         'image_path' => $img->image_path,
+                        'url' => $img->url,
                         'is_primary' => (bool) $img->is_primary,
                         'order' => $img->order,
                     ];

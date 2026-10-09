@@ -40,6 +40,30 @@ class PropertyMedia extends Model
         return $this->belongsTo(Property::class);
     }
 
+    public function getYoutubeIdAttribute(): ?string
+    {
+        if ($this->media_type !== 'video' || empty($this->file_path)) {
+            return null;
+        }
+
+        $pattern = '/(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/i';
+        if (preg_match($pattern, $this->file_path, $matches)) {
+            return $matches[1];
+        }
+
+        return null;
+    }
+
+    public function getEmbedUrlAttribute(): ?string
+    {
+        $id = $this->youtube_id;
+        if (!$id) {
+            return null;
+        }
+
+        return "https://www.youtube-nocookie.com/embed/{$id}";
+    }
+
     public function getUrlAttribute(): string
     {
         if (str_starts_with($this->file_path, 'http://') || str_starts_with($this->file_path, 'https://')) {
@@ -52,6 +76,9 @@ class PropertyMedia extends Model
     public function getThumbnailUrlAttribute(): ?string
     {
         if (!$this->thumbnail_path) {
+            if ($this->media_type === 'video' && $this->youtube_id) {
+                return "https://img.youtube.com/vi/{$this->youtube_id}/hqdefault.jpg";
+            }
             return null;
         }
 

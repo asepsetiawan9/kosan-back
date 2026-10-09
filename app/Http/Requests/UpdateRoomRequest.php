@@ -28,6 +28,8 @@ class UpdateRoomRequest extends FormRequest
             'status' => ['sometimes', 'required', 'in:kosong,dipesan,terisi,maintenance'],
             'facility_ids' => ['nullable', 'array'],
             'facility_ids.*' => ['exists:facilities,id'],
+            'image' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            'photo' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
         ];
     }
 }

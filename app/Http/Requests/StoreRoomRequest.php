@@ -25,6 +25,8 @@ class StoreRoomRequest extends FormRequest
             'facility_ids' => ['nullable', 'array'],
             'facility_ids.*' => ['exists:facilities,id'],
             'images' => ['nullable', 'array'],
+            'image' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            'photo' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
         ];
     }
 }

@@ -101,4 +101,18 @@ class Phase1CoreAdminTest extends TestCase
         $this->assertEquals('kosong', $room->fresh()->status);
         $this->assertEquals('selesai', $response->json('data.status') ? $room->fresh()->tenancies()->latest()->first()->status : 'selesai');
     }
+
+    public function test_admin_can_delete_room_without_active_tenancy(): void
+    {
+        $admin = User::where('email', 'admin@kosan.com')->first();
+        $room = Room::where('status', 'kosong')->first();
+
+        $response = $this->actingAs($admin, 'sanctum')->deleteJson("/api/admin/rooms/{$room->id}");
+        $response->assertStatus(200)
+            ->assertJson([
+                'message' => 'Kamar berhasil dihapus.',
+            ]);
+
+        $this->assertNull(Room::find($room->id));
+    }
 }
