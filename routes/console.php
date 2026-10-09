@@ -7,22 +7,6 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote')->hourly();
 
-// Jalankan pengingat tagihan WhatsApp otomatis setiap 15 menit hanya pada jam operasional (08:00 - 20:00 WIB)
-\Illuminate\Support\Facades\Schedule::command('wa:run-reminders')
-    ->everyFifteenMinutes()
-    ->between('08:00', '20:00')
-    ->timezone('Asia/Jakarta')
-    ->withoutOverlapping();
-
-// Reset percakapan chatbot WhatsApp yang melewati batas TTL (30 menit) setiap 5 menit
-\Illuminate\Support\Facades\Schedule::command('wa:expire-conversations')
-    ->everyFiveMinutes()
-    ->withoutOverlapping();
-
-// Pembersihan payload mentah WhatsApp > 90 hari setiap pekan (Minggu pukul 02:00)
-\Illuminate\Support\Facades\Schedule::command('wa:cleanup-payloads --days=90')
-    ->weeklyOn(0, '02:00')
-    ->withoutOverlapping();
 
 // Batalkan booking kamar kedaluwarsa setiap jam
 \Illuminate\Support\Facades\Schedule::command('bookings:expire-stale')

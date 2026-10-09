@@ -80,15 +80,6 @@ class User extends Authenticatable
         return $this->hasMany(TenantDocument::class);
     }
 
-    public function waMessages(): HasMany
-    {
-        return $this->hasMany(WaMessage::class, 'tenant_id');
-    }
-
-    public function waConversations(): HasMany
-    {
-        return $this->hasMany(WaConversation::class, 'tenant_id');
-    }
 
     public function getDocumentByType(string $type): ?TenantDocument
     {

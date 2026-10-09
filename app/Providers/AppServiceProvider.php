@@ -58,32 +58,6 @@ class AppServiceProvider extends ServiceProvider
             \App\Repositories\Contracts\PropertyMediaRepositoryInterface::class,
             \App\Repositories\Eloquent\PropertyMediaRepository::class
         );
-        $this->app->bind(
-            \App\Repositories\Contracts\WaMessageRepositoryInterface::class,
-            \App\Repositories\Eloquent\WaMessageRepository::class
-        );
-        $this->app->bind(
-            \App\Repositories\Contracts\WaTemplateRepositoryInterface::class,
-            \App\Repositories\Eloquent\WaTemplateRepository::class
-        );
-        $this->app->bind(
-            \App\Repositories\Contracts\WaReminderRuleRepositoryInterface::class,
-            \App\Repositories\Eloquent\WaReminderRuleRepository::class
-        );
-        $this->app->bind(
-            \App\Repositories\Contracts\WaConversationRepositoryInterface::class,
-            \App\Repositories\Eloquent\WaConversationRepository::class
-        );
-        $this->app->bind(
-            \App\Contracts\WhatsAppProviderInterface::class,
-            function () {
-                $provider = config('services.whatsapp.provider', 'fake');
-                if ($provider === 'fonnte') {
-                    return new \App\Services\WhatsApp\FonnteProvider();
-                }
-                return new \App\Services\WhatsApp\FakeProvider();
-            }
-        );
     }
 
 

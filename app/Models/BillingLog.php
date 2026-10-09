@@ -9,22 +9,23 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class WaReminderLog extends Model
+class BillingLog extends Model
 {
     use HasFactory, HasUuids;
 
     protected $fillable = [
+        'tenancy_id',
         'invoice_id',
-        'rule_id',
-        'sent_for_date',
-        'wa_message_id',
+        'template_id',
+        'rendered_msg',
+        'phone_target',
+        'channel',
+        'admin_id',
     ];
 
-    protected function casts(): array
+    public function tenancy(): BelongsTo
     {
-        return [
-            'sent_for_date' => 'date',
-        ];
+        return $this->belongsTo(Tenancy::class);
     }
 
     public function invoice(): BelongsTo
@@ -32,13 +33,13 @@ class WaReminderLog extends Model
         return $this->belongsTo(Invoice::class);
     }
 
-    public function rule(): BelongsTo
+    public function template(): BelongsTo
     {
-        return $this->belongsTo(WaReminderRule::class, 'rule_id');
+        return $this->belongsTo(BillingTemplate::class, 'template_id');
     }
 
-    public function waMessage(): BelongsTo
+    public function admin(): BelongsTo
     {
-        return $this->belongsTo(WaMessage::class, 'wa_message_id');
+        return $this->belongsTo(User::class, 'admin_id');
     }
 }

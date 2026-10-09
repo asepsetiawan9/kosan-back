@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\Admin\AdminTenantDocumentController;
+use App\Http\Controllers\Api\Admin\BillingController;
+use App\Http\Controllers\Api\Admin\BillingTemplateController;
 use App\Http\Controllers\Api\Admin\BookingApprovalController;
 use App\Http\Controllers\Api\Admin\ComplaintController as AdminComplaintController;
 use App\Http\Controllers\Api\Admin\ContractController;
@@ -14,14 +16,9 @@ use App\Http\Controllers\Api\Admin\PropertyMediaController;
 use App\Http\Controllers\Api\Admin\ReportController;
 use App\Http\Controllers\Api\Admin\RoomController;
 use App\Http\Controllers\Api\Admin\TenancyController;
-use App\Http\Controllers\Api\Admin\WaAdminController;
-use App\Http\Controllers\Api\Admin\WaPaymentVerificationController;
-use App\Http\Controllers\Api\Admin\WaReminderRuleController;
-use App\Http\Controllers\Api\Admin\WaTemplateController;
 use App\Http\Controllers\Api\AuthController;
 
 use App\Http\Controllers\Api\PaymentWebhookController;
-use App\Http\Controllers\Api\WhatsAppWebhookController;
 use App\Http\Controllers\Api\Public\PublicBookingController;
 use App\Http\Controllers\Api\Public\PublicPropertyController;
 use App\Http\Controllers\Api\Public\PublicRoomController;
@@ -58,14 +55,6 @@ Route::prefix('public')->group(function () {
 // Payment Gateway Webhook (Signature verified & Idempotent)
 Route::post('/webhook/payment/{provider}', [PaymentWebhookController::class, 'handle']);
 
-// WhatsApp Gateway Webhook (Fonnte / Fake / CloudAPI, Signature/Secret verified & Idempotent)
-Route::post('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'handle'])->middleware('throttle:60,1');
-
-// Health Check Endpoint (Monitoring & Diagnostics)
-Route::get('/health/wa', function (\App\Services\WaHealthCheckService $healthService) {
-    $health = $healthService->checkHealth();
-    return response()->json($health, $health['status'] === 'unhealthy' ? 503 : 200);
-});
 
 // Temporary Signed URL for Protected KTP Access (5 min expiry)
 Route::get('/admin/bookings/{id}/ktp', [BookingApprovalController::class, 'streamKtp'])
@@ -198,37 +187,22 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/reports/income', [ReportController::class, 'income']);
         Route::get('/reports/export', [ReportController::class, 'export']);
 
-        // WhatsApp Messaging & Integration
-        Route::post('/wa/test-send', [WaAdminController::class, 'testSend']);
-        Route::get('/wa/connection-status', [WaAdminController::class, 'connectionStatus']);
-        Route::post('/wa/antiban/reset-circuit', [WaAdminController::class, 'resetCircuitBreaker']);
-        Route::get('/wa/health', [WaAdminController::class, 'health']);
-        Route::get('/wa/messages', [WaAdminController::class, 'messages']);
-        Route::post('/wa/messages/{id}/resend', [WaAdminController::class, 'resend']);
+        // Billing & Penagihan Semi-Manual
+        Route::prefix('billing')->group(function () {
+            Route::get('/summary', [BillingController::class, 'summary']);
+            Route::get('/targets', [BillingController::class, 'targets']);
+            Route::post('/generate-link', [BillingController::class, 'generateLink']);
+            Route::post('/bulk-links', [BillingController::class, 'bulkGenerateLinks']);
+            Route::post('/log', [BillingController::class, 'log']);
+            Route::get('/history', [BillingController::class, 'history']);
 
-        // WhatsApp Templates Management
-        Route::get('/wa/templates', [WaTemplateController::class, 'index']);
-        Route::get('/wa/templates/{id}', [WaTemplateController::class, 'show']);
-        Route::put('/wa/templates/{id}', [WaTemplateController::class, 'update']);
-        Route::post('/wa/templates/preview', [WaTemplateController::class, 'preview']);
+            Route::get('/templates', [BillingTemplateController::class, 'index']);
+            Route::post('/templates', [BillingTemplateController::class, 'store']);
+            Route::put('/templates/{id}', [BillingTemplateController::class, 'update']);
+            Route::delete('/templates/{id}', [BillingTemplateController::class, 'destroy']);
+            Route::post('/templates/preview', [BillingTemplateController::class, 'preview']);
+        });
 
-        // WhatsApp Reminder Rules & Scheduler
-        Route::get('/wa/reminder-rules', [WaReminderRuleController::class, 'index']);
-        Route::post('/wa/reminder-rules', [WaReminderRuleController::class, 'store']);
-        Route::get('/wa/reminder-rules/{id}', [WaReminderRuleController::class, 'show']);
-        Route::put('/wa/reminder-rules/{id}', [WaReminderRuleController::class, 'update']);
-        Route::delete('/wa/reminder-rules/{id}', [WaReminderRuleController::class, 'destroy']);
-        Route::patch('/wa/reminder-rules/{id}/toggle', [WaReminderRuleController::class, 'toggle']);
-        Route::post('/wa/reminders/dry-run', [WaReminderRuleController::class, 'dryRun']);
-        Route::post('/wa/reminders/run', [WaReminderRuleController::class, 'run']);
-        Route::get('/wa/reminder-logs', [WaReminderRuleController::class, 'logs']);
-
-        // WhatsApp Payment Proof Verification
-        Route::get('/wa/payments', [WaPaymentVerificationController::class, 'index']);
-        Route::get('/wa/payments/pending-count', [WaPaymentVerificationController::class, 'pendingCount']);
-        Route::get('/wa/payments/{id}', [WaPaymentVerificationController::class, 'show']);
-        Route::patch('/wa/payments/{id}/verify', [WaPaymentVerificationController::class, 'verify']);
-        Route::post('/wa/payments/manual', [WaPaymentVerificationController::class, 'manualPayment']);
     });
 
 });
