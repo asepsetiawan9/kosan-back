@@ -63,7 +63,6 @@ class PaymentRepository implements PaymentRepositoryInterface
             'invoice.tenancy.room',
             'invoice.tenancy.user',
             'verifier',
-            'waMessage',
         ])->find($id);
     }
 

@@ -56,11 +56,6 @@ class Payment extends Model
         return $this->belongsTo(User::class, 'verified_by');
     }
 
-    public function waMessage(): BelongsTo
-    {
-        return $this->belongsTo(WaMessage::class, 'wa_message_id');
-    }
-
     public function isSuccess(): bool
     {
         return $this->status === 'success';

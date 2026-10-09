@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Services\WaMessageService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -33,23 +32,13 @@ class SendWhatsAppNotificationJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(WaMessageService $messageService): void
+    public function handle(): void
     {
-        Log::info('[WHATSAPP NOTIFICATION DISPATCHED]', [
+        // No-op: Integrasi direct WA API telah digantikan dengan penagihan semi-manual via link WA Web.
+        Log::info('[WHATSAPP NOTIFICATION NO-OP]', [
             'to' => $this->phone,
             'context' => $this->context,
-            'message' => $this->message,
             'timestamp' => now()->toIso8601String(),
         ]);
-
-        // Route through unified WaMessageService with anti-ban guard and queue protection
-        try {
-            $messageService->send($this->phone, $this->message, [
-                'template_key' => $this->context,
-                'force' => false,
-            ]);
-        } catch (\Throwable $e) {
-            Log::warning('[SendWhatsAppNotificationJob] Skipped queuing WaMessage: ' . $e->getMessage());
-        }
     }
 }

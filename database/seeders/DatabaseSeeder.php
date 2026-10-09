@@ -18,8 +18,6 @@ class DatabaseSeeder extends Seeder
             FacilitySeeder::class,
             PropertySeeder::class,
             SampleRoomSeeder::class,
-            WaTemplateSeeder::class,
-            WaReminderRuleSeeder::class,
         ]);
     }
 }
