@@ -20,6 +20,12 @@ class DatabaseSeeder extends Seeder
             SampleRoomSeeder::class,
             BillingTemplateSeeder::class,
         ]);
+
+        if (!app()->environment('testing')) {
+            $this->call([
+                DummyTenantSeeder::class,
+            ]);
+        }
     }
 }
 
