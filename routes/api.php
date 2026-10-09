@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\Admin\AdminTenantDocumentController;
+use App\Http\Controllers\Api\Admin\BillingController;
+use App\Http\Controllers\Api\Admin\BillingTemplateController;
 use App\Http\Controllers\Api\Admin\BookingApprovalController;
 use App\Http\Controllers\Api\Admin\ComplaintController as AdminComplaintController;
 use App\Http\Controllers\Api\Admin\ContractController;
@@ -184,6 +186,22 @@ Route::middleware('auth:sanctum')->group(function () {
         // Financial Reports
         Route::get('/reports/income', [ReportController::class, 'income']);
         Route::get('/reports/export', [ReportController::class, 'export']);
+
+        // Billing & Penagihan Semi-Manual
+        Route::prefix('billing')->group(function () {
+            Route::get('/summary', [BillingController::class, 'summary']);
+            Route::get('/targets', [BillingController::class, 'targets']);
+            Route::post('/generate-link', [BillingController::class, 'generateLink']);
+            Route::post('/bulk-links', [BillingController::class, 'bulkGenerateLinks']);
+            Route::post('/log', [BillingController::class, 'log']);
+            Route::get('/history', [BillingController::class, 'history']);
+
+            Route::get('/templates', [BillingTemplateController::class, 'index']);
+            Route::post('/templates', [BillingTemplateController::class, 'store']);
+            Route::put('/templates/{id}', [BillingTemplateController::class, 'update']);
+            Route::delete('/templates/{id}', [BillingTemplateController::class, 'destroy']);
+            Route::post('/templates/preview', [BillingTemplateController::class, 'preview']);
+        });
 
     });
 

@@ -60,9 +60,9 @@ class Invoice extends Model
         return $this->status === 'lunas';
     }
 
-    public function reminderLogs(): HasMany
+    public function billingLogs(): HasMany
     {
-        return $this->hasMany(WaReminderLog::class);
+        return $this->hasMany(BillingLog::class);
     }
 }
 

@@ -74,5 +74,10 @@ class Tenancy extends Model
     {
         return $this->hasMany(Contract::class);
     }
+
+    public function billingLogs(): HasMany
+    {
+        return $this->hasMany(BillingLog::class);
+    }
 }
 
